@@ -1,6 +1,5 @@
 import urllib.request
-from lxml.cssselect import CSSSelector
-from lxml.html import fromstring
+from bs4 import BeautifulSoup as Soup
 
 import datetime
 
@@ -25,13 +24,10 @@ def fetch_info():
 
 def load_page(url):
     content = urllib.request.urlopen(url).read()
-    html = fromstring(content)
+    soup = Soup(content)
 
-    datetime_selector = CSSSelector('tbody tr:first-child td:first-child')
-    value_selector = CSSSelector('tbody tr:first-child td:last-child')
-
-    datetime_str = datetime_selector(html)[0].text
-    value = value_selector(html)[0].text
+    datetime_str = soup.select('tbody tr:nth-of-type(1) td:nth-of-type(1)')[0].text
+    value = soup.select('tbody tr:nth-of-type(1) td:nth-of-type(2)')[0].text
 
     dt = datetime.datetime.strptime(datetime_str, '%d.%m.%Y %H:%M')
     datetime_str = dt.isoformat()
