@@ -9,8 +9,8 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         },
         'card': {
             'type': 'Simple',
-            'title': "SessionSpeechlet - " + title,
-            'content': "SessionSpeechlet - " + output
+            'title': title,
+            'content': output
         },
         'reprompt': {
             'outputSpeech': {
@@ -38,13 +38,14 @@ def get_welcome_response():
                     "Du kannst bei mir erfahren welche Temperatur, welchen Wasserstand " \
                     "und welche Fließgeschwindigkeit die Isar in München hat."
     reprompt_text = "Frage mich, was Du über die Isar wissen magst."
-    should_end_session = False
+    should_end_session = True
     return build_response(build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 def handle_session_end_request():
     card_title = "Session Ended"
     speech_output = "Ciao und viel Spaß an der Isar!"
+    # Setting this to true ends the session and exits the skill.
     should_end_session = True
     return build_response(build_speechlet_response(
         card_title, speech_output, None, should_end_session))
@@ -69,7 +70,7 @@ def get_isar_info(query):
         'flow': 'Im Moment fließt die Isar mit {flow:.0f} Kubikmetern pro Sekunde',
         'all': 'Die Isar hat einen Pegel von {level:.0f} Zentimetern, ist {temperature:.1f} Grad kalt und fließt mit {flow:.0f} Kubikmetern pro Sekunde'
     }
-
+    
     data = get_isar_data()
 
     card_title = query
@@ -90,15 +91,10 @@ def get_isar_info(query):
 # --------------- Events ------------------
 
 def on_launch(launch_request, session):
-    print("on_launch requestId=" + launch_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
     return get_welcome_response()
 
 
 def on_intent(intent_request, session):
-    print("on_intent requestId=" + intent_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
-
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
 
@@ -121,11 +117,7 @@ def on_intent(intent_request, session):
 # --------------- Main handler ------------------
 
 def lambda_handler(event, context):
-    print("event.session.application.applicationId=" +
-          event['session']['application']['applicationId'])
-
     if event['request']['type'] == "LaunchRequest":
         return on_launch(event['request'], event['session'])
     elif event['request']['type'] == "IntentRequest":
         return on_intent(event['request'], event['session'])
-
