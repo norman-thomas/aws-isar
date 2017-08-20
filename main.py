@@ -47,6 +47,8 @@ def read_db(db):
     with db.cursor() as cur:
         cur.execute('SELECT time, level, flow, temperature FROM isar_pegel ORDER BY time DESC LIMIT 1')
         result = cur.fetchone()
+        result = (result[0].strftime('%Y-%m-%d %H:%M'), *result[1:])
+        result = dict(zip(('time', 'level', 'flow', 'temperature'), result))
     return result
 
 def fetch_info():
