@@ -1,7 +1,11 @@
 import urllib.request
 from bs4 import BeautifulSoup as Soup
-
+import pymysql
 import datetime
+import json
+import logging
+
+from config import *
 
 LEVEL_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?setdiskr=15'
 FLOW_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?methode=abfluss&setdiskr=15'
@@ -20,9 +24,30 @@ TEMPERATURE_SELECTORS = (
     'table#pegel_tabelle tbody tr:nth-of-type(1) td:nth-of-type(2)'
 )
 
-def lambda_handler(event, context):
-    info = fetch_info()
-    return info
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def connect_db():
+    try:
+        return pymysql.connect(MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB, connect_timeout=5)
+    except:
+        logger.exception()
+    return None
+
+def store_db(db, values):
+    with db.cursor() as cur:
+        print('Storing:', json.dumps(values))
+        try:
+            cur.execute('INSERT INTO isar_pegel (time, level, flow, temperature) VALUES (%s, %s, %s, %s)', (values['time'], values['level'], values['flow'], values['temperature']))
+            db.commit()
+        except:
+            print('Failed to store data.')
+
+def read_db(db):
+    with db.cursor() as cur:
+        cur.execute('SELECT time, level, flow, temperature FROM isar_pegel ORDER BY time DESC LIMIT 1')
+        result = cur.fetchone()
+    return result
 
 def fetch_info():
     level = load_page(LEVEL_URL, LEVEL_SELECTORS)
@@ -30,9 +55,10 @@ def fetch_info():
     temperature = load_page(TEMPERATURE_URL, TEMPERATURE_SELECTORS)
 
     return {
-        'level': level,
-        'flow': flow,
-        'temperature': temperature
+        'time': level['datetime'],
+        'level': level['value'],
+        'flow': flow['value'],
+        'temperature': temperature['value']
     }
 
 def load_page(url, selectors):
@@ -53,5 +79,23 @@ def load_page(url, selectors):
         'value': value
     }
 
+def lambda_handler(event, context):
+    db = connect_db()
+    if db is None:
+        return None
+
+    if 'trigger' in event and event.trigger == 'cron':
+        info = fetch_info()
+        store_db(db, info)
+    info = read_db(db)
+    db.close()
+    return info
+
 if __name__ == '__main__':
-    print(fetch_info())
+    db = connect_db()
+    info = fetch_info()
+    print(info)
+    #store_db(db, info)
+    print(read_db(db))
+    db.close()
+

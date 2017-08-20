@@ -1,0 +1,8 @@
+MYSQL_HOST = ''
+MYSQL_PORT = 3306
+MYSQL_USER = ''
+MYSQL_PASS = ''
+MYSQL_DB = ''
+MYSQL_TABLE = ''
+
+
