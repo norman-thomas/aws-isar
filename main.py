@@ -82,11 +82,13 @@ def load_page(url, selectors):
     }
 
 def lambda_handler(event, context):
+    print(event)
+
     db = connect_db()
     if db is None:
         return None
 
-    if 'trigger' in event and event.trigger == 'cron':
+    if isinstance(event, dict) and 'trigger' in event and event['trigger'] == 'cron':
         info = fetch_info()
         store_db(db, info)
     info = read_db(db)
