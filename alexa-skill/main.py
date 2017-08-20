@@ -57,9 +57,9 @@ def get_isar_data():
     data = str(data, 'utf-8')
     data = json.loads(data)
     data = {
-        'level': data['level']['value'],
-        'flow': data['flow']['value'],
-        'temperature': data['temperature']['value']
+        'level': data['level'],
+        'flow': data['flow'],
+        'temperature': data['temperature']
     }
     return data
 
