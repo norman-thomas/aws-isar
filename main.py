@@ -9,7 +9,8 @@ from config import *
 
 LEVEL_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?setdiskr=15'
 FLOW_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?methode=abfluss&setdiskr=15'
-TEMPERATURE_URL = 'http://www.gkd.bayern.de/fluesse/wassertemperatur/stationen/diagramm/index.php?thema=gkd&rubrik=fluesse&produkt=wassertemperatur&gknr=4&msnr=783500823&zr=woche'
+TEMPERATURE_URL = 'https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/muenchen-783500113/messwerte/tabelle'
+PARTICLE_URL = 'https://www.gkd.bayern.de/de/fluesse/schwebstoff/kelheim/muenchen-16005701/messwerte/tabelle?zr=woche&parameter=konzentration'
 
 LEVEL_SELECTORS = (
     'tbody tr:nth-of-type(1) td:nth-of-type(1)',
