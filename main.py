@@ -21,8 +21,8 @@ FLOW_SELECTORS = (
     'tbody tr:nth-of-type(1) td:nth-of-type(2)'
 )
 TEMPERATURE_SELECTORS = (
-    'table#pegel_tabelle tbody tr:nth-of-type(1) td:nth-of-type(1)',
-    'table#pegel_tabelle tbody tr:nth-of-type(1) td:nth-of-type(2)'
+    'table.tblsort tbody tr:nth-of-type(1) td:nth-of-type(1)',
+    'table.tblsort tbody tr:nth-of-type(1) td:nth-of-type(2)'
 )
 
 logger = logging.getLogger()
@@ -97,10 +97,10 @@ def lambda_handler(event, context):
     return info
 
 if __name__ == '__main__':
-    db = connect_db()
+    #db = connect_db()
     info = fetch_info()
     print(info)
     #store_db(db, info)
-    print(read_db(db))
-    db.close()
+    #print(read_db(db))
+    #db.close()
 
