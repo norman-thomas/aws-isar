@@ -75,7 +75,10 @@ def load_page(url, selectors):
     datetime_str = dt.isoformat()
 
     value = value.replace(',', '.').replace('\xa0', '')
-    value = float(value)
+    try:
+        value = float(value)
+    except ValueError:
+        value = None
 
     return {
         'datetime': datetime_str,
