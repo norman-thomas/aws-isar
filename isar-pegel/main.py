@@ -4,10 +4,12 @@ import logging
 import urllib.request
 from contextlib import contextmanager
 
-import pymysql
 from bs4 import BeautifulSoup as Soup
+import paho.mqtt.client as mqtt
 
-from config import MYSQL_HOST, MYSQL_USER, MYSQL_PASS, MYSQL_DB
+from config import MQTT_BROKER, MQTT_PORT, MQTT_CLIENT_ID, MQTT_USER, MQTT_PASS
+
+MQTT_TOPIC = 'outside/isar/water/{}'
 
 LEVEL_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?setdiskr=15'
 FLOW_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?methode=abfluss&setdiskr=15'
@@ -31,34 +33,30 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 @contextmanager
-def connect_db():
-    conn = None
+def connect():
+    client = mqtt.Client(client_id=MQTT_CLIENT_ID)
     try:
-        conn = pymysql.connect(MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB, connect_timeout=5)
-        yield conn
+        client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.connect(MQTT_BROKER, MQTT_PORT)
+        client.loop_write()
+        yield client
     except Exception:
         logger.exception()
     finally:
-        if conn:
-            conn.close()
+        if client:
+            client.disconnect()
 
-def store_db(db, values):
-    with db.cursor() as cur:
-        logger.info('Storing: %s', json.dumps(values))
-        try:
-            cur.execute('INSERT INTO isar_pegel (time, level, flow, temperature) VALUES (%s, %s, %s, %s)',
-                                                (values['time'], values['level'], values['flow'], values['temperature']))
-            db.commit()
-        except Exception:
-            logger.exception()
+def on_connect(client, userdata, flags, rc):
+    pass
 
-def read_db(db):
-    with db.cursor() as cur:
-        cur.execute('SELECT time, level, flow, temperature FROM isar_pegel ORDER BY time DESC LIMIT 1')
-        result = cur.fetchone()
-        result = (result[0].strftime('%Y-%m-%d %H:%M'), *result[1:])
-        result = dict(zip(('time', 'level', 'flow', 'temperature'), result))
-    return result
+def _get_topic(k=None):
+    return MQTT_TOPIC.format(k if k else 'all')
+
+def send(client, data):
+    for k, v in data.items():
+        if k != "time" and v is not None:
+            client.publish(_get_topic(k), payload=str(v), qos=1, retain=False)    
+    client.publish(_get_topic(), payload=json.dumps(data), qos=1, retain=False)
 
 def fetch_info():
     level = load_page(LEVEL_URL, LEVEL_SELECTORS)
@@ -97,14 +95,13 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
     print(event)
     if isinstance(event, dict) and 'trigger' in event and event['trigger'] == 'cron':
         info = fetch_info()
-        with connect_db() as db:
-            store_db(db, info)
+        with connect() as client:
+            send(client, info)
         return info
     return None
 
 if __name__ == '__main__':
     data = fetch_info()
     print(data)
-    with connect_db() as database:
-        store_db(database, data)
-        print(read_db(database))
+    with connect() as client:
+        send(client, data)

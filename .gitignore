@@ -104,3 +104,4 @@ ENV/
 
 bin
 pyvenv.cfg
+secrets.sh
