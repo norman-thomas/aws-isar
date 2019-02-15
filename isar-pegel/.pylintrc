@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=duplicate-code,fixme,locally-disabled,too-few-public-methods,too-many-instance-attributes,too-many-arguments,too-many-locals,missing-docstring,invalid-name,no-self-use,too-many-ancestors,unused-argument,arguments-differ
+disable=locally-disabled,too-many-instance-attributes,missing-docstring,invalid-name,broad-except
 
 [REPORTS]
 output-format=colorized

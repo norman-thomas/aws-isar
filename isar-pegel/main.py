@@ -93,13 +93,13 @@ def load_page(url, selectors):
         'value': value
     }
 
-def lambda_handler(event, context):
+def lambda_handler(event, context):  # pylint: disable=unused-argument
     print(event)
     if isinstance(event, dict) and 'trigger' in event and event['trigger'] == 'cron':
         info = fetch_info()
         with connect_db() as db:
             store_db(db, info)
-            return info
+        return info
     return None
 
 if __name__ == '__main__':
