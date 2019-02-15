@@ -4,5 +4,3 @@ MYSQL_USER = ''
 MYSQL_PASS = ''
 MYSQL_DB = ''
 MYSQL_TABLE = ''
-
-

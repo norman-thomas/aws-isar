@@ -1,15 +1,17 @@
-import urllib.request
-from bs4 import BeautifulSoup as Soup
-import pymysql
-import datetime
 import json
+import datetime
 import logging
+import urllib.request
+from contextlib import contextmanager
+
+import pymysql
+from bs4 import BeautifulSoup as Soup
 
 from config import *
 
 LEVEL_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?setdiskr=15'
 FLOW_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?methode=abfluss&setdiskr=15'
-TEMPERATURE_URL = 'https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/muenchen-783500113/messwerte/tabelle'
+TEMPERATURE_URL = 'https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/muenchen-16005701/messwerte/tabelle'
 PARTICLE_URL = 'https://www.gkd.bayern.de/de/fluesse/schwebstoff/kelheim/muenchen-16005701/messwerte/tabelle?zr=woche&parameter=konzentration'
 
 LEVEL_SELECTORS = (
@@ -28,21 +30,26 @@ TEMPERATURE_SELECTORS = (
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+@contextmanager
 def connect_db():
+    conn = None
     try:
-        return pymysql.connect(MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB, connect_timeout=5)
+        conn = pymysql.connect(MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB, connect_timeout=5)
+        yield conn
     except:
         logger.exception()
-    return None
+    finally:
+        if conn:
+            conn.close()
 
 def store_db(db, values):
     with db.cursor() as cur:
-        print('Storing:', json.dumps(values))
+        logger.info('Storing:', json.dumps(values))
         try:
             cur.execute('INSERT INTO isar_pegel (time, level, flow, temperature) VALUES (%s, %s, %s, %s)', (values['time'], values['level'], values['flow'], values['temperature']))
             db.commit()
         except:
-            print('Failed to store data.')
+            logger.exception()
 
 def read_db(db):
     with db.cursor() as cur:
@@ -87,23 +94,15 @@ def load_page(url, selectors):
 
 def lambda_handler(event, context):
     print(event)
-
-    db = connect_db()
-    if db is None:
-        return None
-
     if isinstance(event, dict) and 'trigger' in event and event['trigger'] == 'cron':
         info = fetch_info()
-        store_db(db, info)
-    info = read_db(db)
-    db.close()
-    return info
+        with connect_db() as db:
+            store_db(db, info)
+            return info
 
 if __name__ == '__main__':
-    #db = connect_db()
     info = fetch_info()
     print(info)
-    #store_db(db, info)
-    #print(read_db(db))
-    #db.close()
-
+    with connect_db() as db:
+        store_db(db, info)
+        print(read_db(db))
