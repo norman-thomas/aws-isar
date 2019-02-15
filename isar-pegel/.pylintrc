@@ -1,9 +1,0 @@
-[MESSAGES CONTROL]
-disable=locally-disabled,too-many-instance-attributes,missing-docstring,invalid-name,broad-except
-
-[REPORTS]
-output-format=colorized
-
-[FORMAT]
-indent-string='    '
-max-line-length=150
