@@ -7,7 +7,7 @@ from contextlib import contextmanager
 import pymysql
 from bs4 import BeautifulSoup as Soup
 
-from config import *
+from config import MYSQL_HOST, MYSQL_USER, MYSQL_PASS, MYSQL_DB
 
 LEVEL_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?setdiskr=15'
 FLOW_URL = 'http://www.hnd.bayern.de/pegel/isar/muenchen-16005701/tabelle?methode=abfluss&setdiskr=15'
@@ -36,7 +36,7 @@ def connect_db():
     try:
         conn = pymysql.connect(MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB, connect_timeout=5)
         yield conn
-    except:
+    except Exception:
         logger.exception()
     finally:
         if conn:
@@ -44,11 +44,12 @@ def connect_db():
 
 def store_db(db, values):
     with db.cursor() as cur:
-        logger.info('Storing:', json.dumps(values))
+        logger.info('Storing: %s', json.dumps(values))
         try:
-            cur.execute('INSERT INTO isar_pegel (time, level, flow, temperature) VALUES (%s, %s, %s, %s)', (values['time'], values['level'], values['flow'], values['temperature']))
+            cur.execute('INSERT INTO isar_pegel (time, level, flow, temperature) VALUES (%s, %s, %s, %s)',
+                                                (values['time'], values['level'], values['flow'], values['temperature']))
             db.commit()
-        except:
+        except Exception:
             logger.exception()
 
 def read_db(db):
@@ -99,10 +100,11 @@ def lambda_handler(event, context):
         with connect_db() as db:
             store_db(db, info)
             return info
+    return None
 
 if __name__ == '__main__':
-    info = fetch_info()
-    print(info)
-    with connect_db() as db:
-        store_db(db, info)
-        print(read_db(db))
+    data = fetch_info()
+    print(data)
+    with connect_db() as database:
+        store_db(database, data)
+        print(read_db(database))

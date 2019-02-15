@@ -1,0 +1,9 @@
+[MESSAGES CONTROL]
+disable=duplicate-code,fixme,locally-disabled,too-few-public-methods,too-many-instance-attributes,too-many-arguments,too-many-locals,missing-docstring,invalid-name,no-self-use,too-many-ancestors,unused-argument,arguments-differ
+
+[REPORTS]
+output-format=colorized
+
+[FORMAT]
+indent-string='    '
+max-line-length=150
